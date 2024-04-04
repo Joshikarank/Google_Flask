@@ -35,41 +35,44 @@ def create_google_calendar_service():
 
 @app.route("/create_event", methods=["POST"])
 def create_event():
-    service = create_google_calendar_service()
-    
-    # Get event details from the request body
-    event_data = request.json
-    
-    # Prepare event data
-    event = {
-        'summary': event_data.get('summary', 'New Event'),
-        'location': event_data.get('location', ''),
-        'description': event_data.get('description', ''),
-        'start': {
-            'dateTime': event_data.get('startDateTime'),
-            'timeZone': event_data.get('timeZone', 'UTC'),
-        },
-        'end': {
-            'dateTime': event_data.get('endDateTime'),
-            'timeZone': event_data.get('timeZone', 'UTC'),
-        },
-        'reminders': {
-            'useDefault': False,
-            'overrides': [
-                {'method': 'email', 'minutes': 24 * 60},
-                {'method': 'popup', 'minutes': 10},
-            ],
-        },
-    }
-    created_event = service.events().insert(calendarId='primary', body=event).execute()
-    event_id = created_event['id']
     try:
-        # Insert the event into the primary calendar
+        # Create or retrieve Google Calendar service
+        service = create_google_calendar_service()
         
-        event = service.events().insert(calendarId='primary', body=event).execute()
-        return jsonify({'status': 'success', 'event_link': event.get('htmlLink'),'event_id': event_id})
+        # Get event details from the request body
+        event_data = request.json
+        
+        # Prepare event data
+        event = {
+            'summary': event_data.get('summary', 'New Event'),
+            'location': event_data.get('location', ''),
+            'description': event_data.get('description', ''),
+            'start': {
+                'dateTime': event_data.get('startDateTime'),
+                'timeZone': event_data.get('timeZone', 'UTC'),
+            },
+            'end': {
+                'dateTime': event_data.get('endDateTime'),
+                'timeZone': event_data.get('timeZone', 'UTC'),
+            },
+            'reminders': {
+                'useDefault': False,
+                'overrides': [
+                    {'method': 'email', 'minutes': 24 * 60},
+                    {'method': 'popup', 'minutes': 10},
+                ],
+            },
+        }
+        
+        # Insert the event into the primary calendar
+        created_event = service.events().insert(calendarId='primary', body=event).execute()
+        event_id = created_event['id']
+        
+        return jsonify({'status': 'success', 'event_link': created_event.get('htmlLink'), 'event_id': event_id})
+
     except Exception as e:
         return jsonify({'status': 'error', 'message': str(e)}), 500
+
     
 @app.route("/list_events", methods=["GET"])
 def get_events():
